@@ -65,3 +65,38 @@ class ViewsTest(APITestCase):
         # user2 should not be able to access user1's entry
         response = self.client.get(detail_url)
         self.assertEqual(response.status_code, 403)
+
+    def test_update_entry(self):
+        """
+        Test that a user can update their own entry and not someone else's
+        """
+        # Login user1 and create an entry
+        token1 = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token1}")
+        entry_creation = self.client.post(self.list_url, self.data)
+        self.assertEqual(entry_creation.status_code, 201)
+        entry_id = entry_creation.data["id"]
+
+        # Prepare update data
+        updated_data = {
+            "title": "Updated Title",
+            "current_mood": "happy",
+            "content": "I updated my entry."
+            }
+
+        # Send PUT request
+        detail_url = reverse("entry-detail", kwargs={"pk": entry_id})
+        response = self.client.put(detail_url, updated_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["title"], updated_data["title"])
+
+        # Test unauthenticated user cannot update
+        self.client.credentials()  # Clear auth
+        response = self.client.put(detail_url, updated_data)
+        self.assertEqual(response.status_code, 401)
+
+        # Login as user2 and try updating user1's entry
+        token2 = RefreshToken.for_user(self.user2).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token2}")
+        response = self.client.put(detail_url, updated_data)
+        self.assertEqual(response.status_code, 403)
