@@ -19,12 +19,6 @@ class EntryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    def get_object(self):
-        obj = get_object_or_404(Entry, pk=self.kwargs["pk"])
-        if obj.user != self.request.user:
-            raise PermissionDenied("You do not have permission to access this entry.")
-        return obj
-
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
