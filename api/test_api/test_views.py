@@ -64,7 +64,7 @@ class ViewsTest(APITestCase):
 
         # user2 should not be able to access user1's entry
         response = self.client.get(detail_url)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_update_entry(self):
         """
@@ -99,4 +99,37 @@ class ViewsTest(APITestCase):
         token2 = RefreshToken.for_user(self.user2).access_token
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token2}")
         response = self.client.put(detail_url, updated_data)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_entry(self):
+        """
+        Test deleting an entry:
+        - Only the owner can delete it.
+        - Others get 404.
+        - Unauthenticated users get 401.
+        """
+        # Login user1 and create an entry
+        token = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        create_response = self.client.post(reverse("entry-list"), self.data)
+        self.assertEqual(create_response.status_code, 201)
+        entry_id = create_response.data["id"]
+        detail_url = reverse("entry-detail", kwargs={"pk": entry_id})
+        self.client.credentials()
+
+        # Unauthenticated delete attempt
+        response = self.client.delete(detail_url)
+        self.assertEqual(response.status_code, 401)
+
+        # Login user2 and try to delete user1's entry
+        token = RefreshToken.for_user(self.user2).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.delete(detail_url)
+        self.assertEqual(response.status_code, 404)
+        self.client.credentials()
+
+        # Login user1 and delete their own entry
+        token = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.delete(detail_url)
+        self.assertEqual(response.status_code, 204)
