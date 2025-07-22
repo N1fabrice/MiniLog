@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework.test import APITestCase, APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 from ..models import Entry
+from django.urls import reverse
 
 class EntryCreateTest(APITestCase):
     def setUp(self):
@@ -9,6 +10,8 @@ class EntryCreateTest(APITestCase):
         self.client = APIClient()
         token = RefreshToken.for_user(self.user).access_token
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+        self.url = reverse("entry-list")
 
     def test_create_entry(self):
         """
@@ -20,7 +23,7 @@ class EntryCreateTest(APITestCase):
                 "content": "Today I started testing my API."
                 }
 
-        response = self.client.post("/api/entries/", data)
+        response = self.client.post(self.url, data)
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["title"], "My First Entry")
@@ -43,12 +46,13 @@ class EntryCreateTest(APITestCase):
                 "content": "Today I started testing my API models."
                 }
 
-        response1 = self.client.post("/api/entries/", data1)
+        response1 = self.client.post(self.url, data1)
         self.assertEqual(response1.status_code, 201)
         entry_id = response1.data["id"]
 
 
-        response2 = self.client.put(f"/api/entries/{entry_id}/", data2)
+        detail_url = reverse("entry-detail", kwargs={"pk": entry_id})
+        response2 = self.client.put(detail_url, data2)
         self.assertEqual(response2.status_code, 200)
         self.assertEqual(response2.data["title"], "Updating Works")
         self.assertEqual(response2.data["current_mood"], "happy")
@@ -63,13 +67,15 @@ class EntryCreateTest(APITestCase):
                 "content": "Today I started testing my API."
                 }
 
-        response1 = self.client.post("/api/entries/", data)
+        response1 = self.client.post(self.url, data)
         self.assertEqual(response1.status_code, 201)
         response1_id = response1.data["id"]
 
-        response2 = self.client.delete(f"/api/entries/{response1_id}")
-        self.assertEqual(response2.status_code, 301)
-        self.assertEqual(self.client.get(f"/api/entries/{response1_id}").status_code, 301)
+        detail_url = reverse("entry-detail", kwargs={"pk": response1_id})
+        response2 = self.client.delete(detail_url)
+
+        self.assertEqual(response2.status_code, 204)
+        self.assertEqual(self.client.get(detail_url).status_code, 404)
     
 
     def test_str_entry(self):
@@ -81,7 +87,7 @@ class EntryCreateTest(APITestCase):
                 "current_mood": "neutral",
                 "content": "Today I started testing my API."
                 }
-        response = self.client.post("/api/entries/", data)
+        response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 201)
 
         entry = Entry.objects.first()
@@ -97,7 +103,7 @@ class EntryCreateTest(APITestCase):
                 "current_mood": "",
                 "content": ""
                 }
-        response1 = self.client.post("/api/entries/", data1)
+        response1 = self.client.post(self.url, data1)
         self.assertEqual(response1.status_code, 400)
 
         data2 = {
@@ -105,19 +111,5 @@ class EntryCreateTest(APITestCase):
                 "current_mood": "happy",
                 "content": ""
                 }
-        response2 = self.client.post("/api/entries/", data2)
+        response2 = self.client.post(self.url, data2)
         self.assertEqual(response2.status_code, 400)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
