@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, generics
 from .models import Entry
+from django.contrib.auth.models import User
 from .serializers import EntrySerializer, RegisterSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
@@ -25,6 +26,6 @@ class EntryViewSet(viewsets.ModelViewSet):
         return obj
 
 class RegisterView(generics.CreateAPIView):
-    queryset = Entry.objects.all()
+    queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
