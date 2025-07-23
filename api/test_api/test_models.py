@@ -7,7 +7,6 @@ from django.urls import reverse
 class EntryCreateTest(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="john", email="john@gmail.com", password="john_123")
-        self.client = APIClient()
         token = RefreshToken.for_user(self.user).access_token
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 

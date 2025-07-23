@@ -7,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 
-# Create your views here.
 
 class EntryViewSet(viewsets.ModelViewSet):
     serializer_class = EntrySerializer

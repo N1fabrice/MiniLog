@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase, APIClient
-from ..models import Entry
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 
